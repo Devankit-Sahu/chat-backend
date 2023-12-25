@@ -11,14 +11,15 @@ const groupSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
-    members: [
-      {
-        member_id: {
-          type: Schema.Types.ObjectId,
-          ref: "User",
-        },
-      },
-    ],
+    limit: {
+      type: Number,
+      default: 5,
+      required: true,
+    },
+    image: {
+      type: String,
+      default: "This is an image",
+    },
   },
   { timestamps: true }
 );

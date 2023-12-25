@@ -3,26 +3,105 @@ import ErrorHandler from "../utils/errorhandler.js";
 import Group from "../models/groupModel.js";
 import GroupChat from "../models/groupChatModel.js";
 import User from "../models/userModel.js";
+import GroupMember from "../models/groupMemberModel.js";
+import mongoose from "mongoose";
+
 export const createGroup = catchAsyncError(async (req, res, next) => {
-  const { groupName, groupCreater, members } = req.body;
+  const { groupName, groupCreater, limit } = req.body;
 
-  let newGroup = await Group.findOne({ groupName });
+  const isGroupExists = await Group.findOne({ groupName });
 
-  if (newGroup) {
+  if (isGroupExists) {
     return next(
-      new ErrorHandler("Group name already exits. Please try another name", 404)
+      new ErrorHandler(
+        "Group name already in use. Please try another name",
+        404
+      )
     );
   }
 
-  newGroup = await Group.create({
+  const newGroup = await Group.create({
     groupName,
     groupCreater,
-    members,
+    limit,
   });
 
   res.status(200).json({
     success: true,
     newGroup,
+  });
+});
+
+export const getMembers = catchAsyncError(async (req, res, next) => {
+  const users = await User.aggregate([
+    {
+      $lookup: {
+        from: "groupmembers",
+        localField: "_id",
+        foreignField: "memberId",
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  {
+                    $eq: [
+                      "$groupId",
+                      new mongoose.Types.ObjectId(req.body.group_id),
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        ],
+        as: "member",
+      },
+    },
+    {
+      $match: {
+        _id: {
+          $nin: [new mongoose.Types.ObjectId(req.user._id)],
+        },
+      },
+    },
+  ]);
+console.log(users);
+  res.status(200).json({
+    success: true,
+    users,
+  });
+});
+
+
+export const addMembersToGroup = catchAsyncError(async (req, res, next) => {
+  const { members, group_id, limit } = req.body;
+
+  const isGroupExists = await Group.findById(group_id);
+
+  await GroupMember.deleteMany({
+    groupId: isGroupExists._id,
+  });
+
+  const membersList = [];
+  if (members.length > limit) {
+    return next(
+      new ErrorHandler(`You cannot add more than ${limit} members`),
+      301
+    );
+  }
+
+  for (let i = 0; i < members.length; i++) {
+    membersList.push({
+      groupId: isGroupExists._id,
+      memberId: members[i],
+    });
+  }
+
+  await GroupMember.insertMany(membersList);
+
+  res.status(200).json({
+    success: true,
   });
 });
 
@@ -46,13 +125,9 @@ export const getGroupDetails = catchAsyncError(async (req, res, next) => {
     );
   }
 
-  const memberDetails = await Promise.all(
-    group.members.map(async (mem) => await User.findById(mem.member_id))
-  );
   res.status(200).json({
     success: true,
     group,
-    memberDetails,
   });
 });
 
