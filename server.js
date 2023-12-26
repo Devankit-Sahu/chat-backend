@@ -50,6 +50,18 @@ connectDatabase()
         socket.emit("loadAllChats", { chats });
       });
 
+      // Inside the socket connection event
+      socket.on("typing", function (data) {
+        socket.broadcast.emit("userTyping", { id: socket.handshake.auth.id });
+      });
+
+      // Add another event to handle when the user stops typing
+      socket.on("stopTyping", function (data) {
+        socket.broadcast.emit("userStoppedTyping", {
+          id: socket.handshake.auth.id,
+        });
+      });
+
       // disconnecting socket
       socket.on("disconnect", async function () {
         console.log("connection disconnect");
