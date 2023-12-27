@@ -20,9 +20,9 @@ export const chatMessage = catchAsyncError(async (req, res, next) => {
 });
 
 export const getChats = catchAsyncError(async (req, res, next) => {
-  const { sender_id, reciever_id } = req.params;
-
-  // Find the chat document based on sender and receiver IDs
+  const { sender_id, reciever_id } = req.body;
+console.log(sender_id,reciever_id);
+  // Find the chat documents based on sender and receiver IDs
   const chats = await OneToOneChat.find({
     $or: [
       { sender_id, reciever_id },
@@ -34,6 +34,12 @@ export const getChats = catchAsyncError(async (req, res, next) => {
     res.status(200).json({
       success: true,
       chats,
+    });
+  } else {
+    // If no chats are found, return an empty array
+    res.status(200).json({
+      success: true,
+      chats: [],
     });
   }
 });

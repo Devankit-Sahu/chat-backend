@@ -101,3 +101,22 @@ export const selectedUserDetails = catchAsyncError(async (req, res, next) => {
     user,
   });
 });
+
+export const searchUserByName = catchAsyncError(async (req, res, next) => {
+  const usernameRegex = new RegExp(req.params.username, "i");
+  const user = await User.findOne({ username: { $regex: usernameRegex } });
+
+  if (!user) {
+    return next(
+      new ErrorHandler(
+        `user with ${req.params.username} username does not exists`,
+        401
+      )
+    );
+  }
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
