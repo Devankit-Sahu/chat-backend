@@ -104,7 +104,7 @@ export const selectedUserDetails = catchAsyncError(async (req, res, next) => {
 
 export const searchUserByName = catchAsyncError(async (req, res, next) => {
   const usernameRegex = new RegExp(req.params.username, "i");
-  const user = await User.findOne({ username: { $regex: usernameRegex } });
+  const user = await User.find({ username: { $regex: usernameRegex } });
 
   if (!user) {
     return next(
