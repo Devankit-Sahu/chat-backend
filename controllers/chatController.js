@@ -1,14 +1,31 @@
 import catchAsyncError from "../utils/catchAsyncErrors.js";
 import OneToOneChat from "../models/oneToOneChatModel.js";
+import { uploadOnCloudinary } from "../utils/cloudinaryFIleUpload.js";
 
 export const chatMessage = catchAsyncError(async (req, res, next) => {
   const { message, sender_id, reciever_id } = req.body;
-  // Create a new chat message
-  const newChat = new OneToOneChat({
-    sender_id,
-    reciever_id,
-    message,
-  });
+
+  let newChat;
+  // handling files
+  const attachmentPath = req.file?.path;
+
+  if (!attachmentPath) {
+    // Create a new chat message
+    newChat = new OneToOneChat({
+      sender_id,
+      reciever_id,
+      message,
+    });
+  } else {
+    const attachmentUrl = await uploadOnCloudinary(attachmentPath);
+    // Create a new chat message
+    newChat = new OneToOneChat({
+      sender_id,
+      reciever_id,
+      message,
+      attachments: attachmentUrl.url,
+    });
+  }
 
   const chat = await newChat.save();
 
@@ -21,7 +38,6 @@ export const chatMessage = catchAsyncError(async (req, res, next) => {
 
 export const getChats = catchAsyncError(async (req, res, next) => {
   const { sender_id, reciever_id } = req.body;
-console.log(sender_id,reciever_id);
   // Find the chat documents based on sender and receiver IDs
   const chats = await OneToOneChat.find({
     $or: [

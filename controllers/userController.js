@@ -1,6 +1,7 @@
 import catchAsyncError from "../utils/catchAsyncErrors.js";
 import ErrorHandler from "../utils/errorhandler.js";
 import User from "../models/userModel.js";
+import { uploadOnCloudinary } from "../utils/cloudinaryFIleUpload.js";
 
 export const newUser = catchAsyncError(async (req, res, next) => {
   const { username, email, password } = req.body;
@@ -11,11 +12,23 @@ export const newUser = catchAsyncError(async (req, res, next) => {
     return next(new ErrorHandler("Email already in use", 404));
   }
 
-  user = await User.create({
-    username,
-    email,
-    password,
-  });
+  const avatarPath = req.file?.path;
+
+  if (!avatarPath) {
+    user = await User.create({
+      username,
+      email,
+      password,
+    });
+  } else {
+    const avatarObj = await uploadOnCloudinary(avatarPath);
+    user = await User.create({
+      username,
+      email,
+      password,
+      avatar: avatarObj.url,
+    });
+  }
 
   const token = await user.generateJwtToken();
 
@@ -104,9 +117,9 @@ export const selectedUserDetails = catchAsyncError(async (req, res, next) => {
 
 export const searchUserByName = catchAsyncError(async (req, res, next) => {
   const usernameRegex = new RegExp(req.params.username, "i");
-  const user = await User.find({ username: { $regex: usernameRegex } });
+  const users = await User.find({ username: { $regex: usernameRegex } });
 
-  if (!user) {
+  if (!users) {
     return next(
       new ErrorHandler(
         `user with ${req.params.username} username does not exists`,
@@ -117,6 +130,6 @@ export const searchUserByName = catchAsyncError(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    user,
+    users,
   });
 });

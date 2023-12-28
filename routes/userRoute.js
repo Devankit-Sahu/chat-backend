@@ -10,8 +10,9 @@ import {
   userDetails,
 } from "../controllers/userController.js";
 import { verifiedRoute } from "../middlewares/authMiddleware.js";
+import { upload } from "../middlewares/multerMiddleware.js";
 
-router.post("/register", newUser);
+router.post("/register", upload.single("avatar"), newUser);
 router.post("/login", loginUser);
 router.get("/logout", logoutUser);
 router.get("/all", verifiedRoute, allusers);

@@ -4,11 +4,20 @@ import { app } from "./app.js";
 import { Server } from "socket.io";
 import User from "./models/userModel.js";
 import oneToOneChat from "./models/oneToOneChatModel.js";
+import cloudinary from "cloudinary";
 
+// configure environmental variables
 dotenv.config();
 
+// configure cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 // database connectivity
-connectDatabase()
+await connectDatabase()
   .then(() => {
     // handling uncaughtException error
     process.on("uncaughtException", (error) => {
@@ -21,12 +30,14 @@ connectDatabase()
       console.log("server is runing in port at 8080");
     });
 
+    // create socket instance
     const io = new Server(server, {
       cors: {
         origin: [process.env.CORS_FRONTEND_URL],
       },
     });
 
+    // create socket connection
     io.on("connection", async (socket) => {
       console.log("connection established");
       console.log(`User connected: ${socket.handshake.auth.id}`);
@@ -73,7 +84,7 @@ connectDatabase()
         socket.broadcast.emit("offline", { id: socket.handshake.auth.id });
       });
     });
-        
+
     // handling unhandleRejection error
     process.on("unhandledRejection", (error) => {
       console.log(error.name, error.message);
@@ -84,5 +95,5 @@ connectDatabase()
     });
   })
   .catch((error) => {
-    console.log("Error : ", error);
+    console.log("Mongodb error : ", error);
   });

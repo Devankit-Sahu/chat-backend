@@ -14,6 +14,9 @@ const oneToOneChatSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    attachments: {
+      type: String,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

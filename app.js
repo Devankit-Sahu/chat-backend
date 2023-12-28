@@ -5,7 +5,6 @@ import errorMiddleware from "./middlewares/errorMiddleware.js";
 
 const app = express();
 
-
 app.use(
   cors({
     origin: process.env.CORS_FRONTEND_URL,
