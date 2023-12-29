@@ -2,6 +2,7 @@ import catchAsyncError from "../utils/catchAsyncErrors.js";
 import ErrorHandler from "../utils/errorhandler.js";
 import User from "../models/userModel.js";
 import { uploadOnCloudinary } from "../utils/cloudinaryFIleUpload.js";
+import cloudinary from "cloudinary";
 
 export const newUser = catchAsyncError(async (req, res, next) => {
   const { username, email, password } = req.body;
@@ -22,11 +23,15 @@ export const newUser = catchAsyncError(async (req, res, next) => {
     });
   } else {
     const avatarObj = await uploadOnCloudinary(avatarPath);
+    const avatar = {
+      public_id: avatarObj.public_id,
+      url: avatarObj.url,
+    };
     user = await User.create({
       username,
       email,
       password,
-      avatar: avatarObj.url,
+      avatar,
     });
   }
 
@@ -36,11 +41,12 @@ export const newUser = catchAsyncError(async (req, res, next) => {
     .cookie("jwtToken", token, {
       expires: new Date(Date.now() + 1800000),
       httpOnly: true,
+      secure: true,
     })
     .status(200)
     .json({
       success: true,
-      message: "User created !!!",
+      message: "User created",
     });
 });
 
@@ -72,18 +78,19 @@ export const loginUser = catchAsyncError(async (req, res, next) => {
     .cookie("jwtToken", token, {
       expires: new Date(Date.now() + 1800000),
       httpOnly: true,
+      secure: true,
     })
     .status(200)
     .json({
       success: true,
-      message: "logged in",
+      message: "user logged in",
     });
 });
 
 export const logoutUser = catchAsyncError(async (req, res, next) => {
   res.clearCookie("jwtToken", { path: "/" }).status(200).json({
     success: true,
-    message: "Logged out !!!",
+    message: "user logged out",
   });
 });
 
@@ -131,5 +138,91 @@ export const searchUserByName = catchAsyncError(async (req, res, next) => {
   res.status(200).json({
     success: true,
     users,
+  });
+});
+
+export const updateUserAbout = catchAsyncError(async (req, res, next) => {
+  await User.findByIdAndUpdate(
+    { _id: req.user._id },
+    { $set: { about: req.body.about } },
+    { new: true }
+  );
+  res.status(200).json({
+    success: true,
+    message: "About updated successfully",
+  });
+});
+
+export const updateUserAvatar = catchAsyncError(async (req, res, next) => {
+  let loggedinuser = await User.findById({ _id: req.user._id });
+  const avatarPath = req.file?.path;
+
+  if (!avatarPath) {
+    return next(new ErrorHandler("Avatar is missing", 400));
+  }
+
+  if (
+    loggedinuser.avatar &&
+    !loggedinuser.avatar.public_id &&
+    !loggedinuser.avatar.url
+  ) {
+    //uploading new avatar to cloudinary
+    const avatarObj = await uploadOnCloudinary(avatarPath);
+    await User.findByIdAndUpdate(
+      { _id: loggedinuser._id },
+      {
+        $set: {
+          avatar: { public_id: avatarObj.public_id, url: avatarObj.url },
+        },
+      },
+      { new: true }
+    );
+  } else {
+    // deleting image from cloudinary
+    await cloudinary.v2.uploader.destroy(user.avatar.public_id);
+    // updating avatar of user
+    const avatarObj = await uploadOnCloudinary(avatarPath);
+
+    await User.findByIdAndUpdate(
+      { _id: loggedinuser._id },
+      {
+        $set: {
+          avatar: { public_id: avatarObj.public_id, url: avatarObj.url },
+        },
+      },
+      { new: true }
+    );
+  }
+  res.status(200).json({
+    success: true,
+    message: "Avatar update successfully",
+  });
+});
+
+export const changePassword = catchAsyncError(async (req, res, next) => {
+  const { oldPassword, newPassword } = req.body;
+
+  if (!oldPassword) {
+    return next(new ErrorHandler("old password is missing", 400));
+  }
+  if (!newPassword) {
+    return next(new ErrorHandler("new password is missing", 400));
+  }
+
+  const loggedinuser = await User.findById(req.user._id).populate("password");
+
+  const isPasswordCorrect = await loggedinuser.comparePassword(oldPassword);
+
+  if (!isPasswordCorrect) {
+    return next(new ErrorHandler("old password is incorrect", 400));
+  }
+
+  loggedinuser.password = newPassword;
+
+  await loggedinuser.save({ validateBeforeSave: false });
+
+  res.status(200).json({
+    success: true,
+    message: "password changed successfully",
   });
 });

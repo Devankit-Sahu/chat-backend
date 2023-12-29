@@ -21,7 +21,11 @@ const userSchema = new mongoose.Schema({
       message: (props) => `${props.value} is not a valid email address!`,
     },
   },
-  avatar: { type: String },
+  about: String,
+  avatar: {
+    public_id: String,
+    url: String,
+  },
   password: {
     type: String,
     required: [true, "password is required"],
@@ -52,6 +56,7 @@ userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
   this.password = await bcrypt.hash(this.password, 12);
+  next();
 });
 
 userSchema.methods.comparePassword = async function (enteredpassword) {

@@ -17,13 +17,17 @@ export const chatMessage = catchAsyncError(async (req, res, next) => {
       message,
     });
   } else {
-    const attachmentUrl = await uploadOnCloudinary(attachmentPath);
+    const attachmentObj = await uploadOnCloudinary(attachmentPath);
+    const attachments = {
+      public_id: attachmentObj.public_id,
+      url: attachmentObj.url,
+    };
     // Create a new chat message
     newChat = new OneToOneChat({
       sender_id,
       reciever_id,
       message,
-      attachments: attachmentUrl.url,
+      attachments,
     });
   }
 
