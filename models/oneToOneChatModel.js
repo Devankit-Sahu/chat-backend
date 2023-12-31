@@ -15,8 +15,8 @@ const oneToOneChatSchema = new mongoose.Schema(
       required: true,
     },
     attachments: {
-      public_id: { type: String, default: null },
-      url: { type: String, default: null },
+      public_id: String,
+      url: String,
     },
     createdAt: {
       type: Date,

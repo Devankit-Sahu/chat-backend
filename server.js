@@ -6,12 +6,14 @@ import User from "./models/userModel.js";
 import oneToOneChat from "./models/oneToOneChatModel.js";
 import cloudinary from "cloudinary";
 
+dotenv.config({ path: ".env.development" });
+
 // configure environmental variables and Load environment variables based on NODE_ENV
-if (process.env.NODE_ENV === 'development') {
-  dotenv.config({ path: '.env.development' });
-} else if (process.env.NODE_ENV === 'production') {
-  dotenv.config({ path: '.env.production' });
-}
+// if (process.env.NODE_ENV == "development") {
+//   dotenv.config({ path: ".env.development" });
+// } else if (process.env.NODE_ENV == "production") {
+//   dotenv.config({ path: ".env.production" });
+// }
 
 // configure cloudinary
 cloudinary.config({
@@ -35,12 +37,17 @@ await connectDatabase()
     });
 
     // create socket instance
+    // const io = new Server(server, {
+    //   cors: {
+    //     origin:
+    //       process.env.NODE_ENV === "production"
+    //         ? process.env.CORS_FRONTEND_URL
+    //         : process.env.CORS_FRONTEND_URL,
+    //   },
+    // });
     const io = new Server(server, {
       cors: {
-        origin:
-          process.env.NODE_ENV === "production"
-            ? process.env.CORS_FRONTEND_URL
-            : process.env.CORS_FRONTEND_URL,
+        origin: process.env.CORS_FRONTEND_URL,
       },
     });
 
