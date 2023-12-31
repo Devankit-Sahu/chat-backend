@@ -179,7 +179,7 @@ export const updateUserAvatar = catchAsyncError(async (req, res, next) => {
     );
   } else {
     // deleting image from cloudinary
-    await cloudinary.v2.uploader.destroy(user.avatar.public_id);
+    await cloudinary.v2.uploader.destroy(loggedinuser.avatar.public_id);
     // updating avatar of user
     const avatarObj = await uploadOnCloudinary(avatarPath);
 

@@ -7,7 +7,10 @@ const app = express();
 
 app.use(
   cors({
-    origin: process.env.CORS_FRONTEND_URL,
+    origin:
+      process.env.NODE_ENV === "production"
+        ? process.env.CORS_FRONTEND_URL
+        : process.env.CORS_FRONTEND_URL,
   })
 );
 
