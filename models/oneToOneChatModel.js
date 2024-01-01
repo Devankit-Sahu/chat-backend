@@ -12,11 +12,11 @@ const oneToOneChatSchema = new mongoose.Schema(
     },
     message: {
       type: String,
-      required: true,
     },
     attachments: {
       public_id: String,
       url: String,
+      caption: String,
     },
     createdAt: {
       type: Date,

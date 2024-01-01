@@ -7,31 +7,15 @@ import ErrorHandler from "../utils/errorhandler.js";
 export const chatMessage = catchAsyncError(async (req, res, next) => {
   const { message, sender_id, reciever_id } = req.body;
 
-  let newChat;
-  // handling files
-  const attachmentPath = req.file?.path;
-
-  if (!attachmentPath) {
-    // Create a new chat message
-    newChat = new OneToOneChat({
-      sender_id,
-      reciever_id,
-      message,
-    });
-  } else {
-    const attachmentObj = await uploadOnCloudinary(attachmentPath);
-    const attachments = {
-      public_id: attachmentObj.public_id,
-      url: attachmentObj.url,
-    };
-    // Create a new chat message
-    newChat = new OneToOneChat({
-      sender_id,
-      reciever_id,
-      message,
-      attachments,
-    });
+  if (!sender_id || !reciever_id || !message) {
+    return next(new ErrorHandler("All fields required", 401));
   }
+
+  const newChat = new OneToOneChat({
+    sender_id,
+    reciever_id,
+    message,
+  });
 
   const chat = await newChat.save();
 
@@ -39,6 +23,47 @@ export const chatMessage = catchAsyncError(async (req, res, next) => {
     success: true,
     message: "Message created",
     chat,
+  });
+});
+
+// add attachments
+export const addAttachments = catchAsyncError(async (req, res, next) => {
+  const { sender_id, reciever_id, caption } = req.body;
+
+  if (!sender_id || !reciever_id) {
+    return next(new ErrorHandler("All fields required", 401));
+  }
+
+  let newAttachments;
+  // handling files
+  const attachmentPath = req.file?.path;
+
+  if (!attachmentPath) {
+    return next(new ErrorHandler("Attachments are missing", 401));
+  }
+
+  const attachmentObj = await uploadOnCloudinary(attachmentPath);
+
+  const attachments = {
+    public_id: attachmentObj.public_id,
+    url: attachmentObj.url,
+  };
+
+  if (caption) {
+    attachments.caption = caption;
+  }
+  // Create a new attachments
+  newAttachments = new OneToOneChat({
+    sender_id,
+    reciever_id,
+    attachments,
+  });
+
+  await newAttachments.save();
+
+  res.status(201).json({
+    success: true,
+    message: "attachments add successfully",
   });
 });
 
