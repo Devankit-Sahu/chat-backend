@@ -2,7 +2,7 @@ import catchAsyncError from "../utils/catchAsyncErrors.js";
 import OneToOneChat from "../models/oneToOneChatModel.js";
 import { uploadOnCloudinary } from "../utils/cloudinaryFIleUpload.js";
 import ErrorHandler from "../utils/errorhandler.js";
-
+import cloudinary from "cloudinary";
 // new chat
 export const chatMessage = catchAsyncError(async (req, res, next) => {
   const { message, sender_id, reciever_id } = req.body;
@@ -59,11 +59,12 @@ export const addAttachments = catchAsyncError(async (req, res, next) => {
     attachments,
   });
 
-  await newAttachments.save();
+  const nAttachments = await newAttachments.save();
 
   res.status(201).json({
     success: true,
     message: "attachments add successfully",
+    nAttachments,
   });
 });
 
@@ -96,6 +97,25 @@ export const getChats = catchAsyncError(async (req, res, next) => {
 export const deleteChats = catchAsyncError(async (req, res, next) => {
   const { sender_id, reciever_id } = req.params;
   // Find the chat documents based on sender and receiver IDs
+
+  const allChats = await OneToOneChat.find();
+
+  // Retrieve attachments  from the chats
+  const attachmentsToDelete = allChats
+    .flatMap((chat) => chat.attachments || []) // Extract attachments from each chat
+    .filter((attachment) => attachment && attachment.public_id);
+  // Delete attachments from Cloudinary
+  if (attachmentsToDelete.length > 0) {
+    await Promise.all(
+      attachmentsToDelete.map(async (attachment) => {
+        // Assuming each attachment in your model has a `public_id` property
+        const publicId = attachment.public_id;
+        // Use Cloudinary API to delete the attachment
+        await cloudinary.v2.uploader.destroy(publicId);
+      })
+    );
+  }
+
   const deleteResult = await OneToOneChat.deleteMany({
     $or: [
       { sender_id, reciever_id },
@@ -104,7 +124,6 @@ export const deleteChats = catchAsyncError(async (req, res, next) => {
   });
 
   if (deleteResult && deleteResult.deletedCount > 0) {
-    console.log(deleteResult);
     res.status(200).json({
       success: true,
       message: "chats deleted successfully",
