@@ -27,7 +27,7 @@ await connectDatabase()
     });
     const io = new Server(server, {
       cors: {
-        origin: "https://chat-frontend-sage.vercel.app/",
+        origin: "https://chat-frontend-sage.vercel.app",
       },
     });
 
