@@ -9,7 +9,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "https://chat-frontend-sage.vercel.app",
+    origin: "https://chat-frontend-8mcb.onrender.com",
   })
 );
 app.use(express.json());
