@@ -7,12 +7,11 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors());
-// app.use(
-//   cors({
-//     origin: process.env.CORS_FRONTEND_URL,
-//   })
-// );
+app.use(
+  cors({
+    origin: "https://chat-frontend-sage.vercel.app/",
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

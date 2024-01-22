@@ -25,12 +25,11 @@ await connectDatabase()
     const server = app.listen(process.env.PORT || 8080, () => {
       console.log("server is runing in port at 8080");
     });
-    const io = new Server(server);
-    // const io = new Server(server, {
-    //   cors: {
-    //     origin: process.env.CORS_FRONTEND_URL,
-    //   },
-    // });
+    const io = new Server(server, {
+      cors: {
+        origin: "https://chat-frontend-sage.vercel.app/",
+      },
+    });
 
     // create socket connection
     io.on("connection", async (socket) => {
