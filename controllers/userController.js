@@ -78,7 +78,7 @@ export const loginUser = catchAsyncError(async (req, res, next) => {
     .cookie("jwtToken", token, {
       expires: new Date(Date.now() + 1800000),
       httpOnly: true,
-      secure: true,
+      // secure: true,
     })
     .status(200)
     .json({
