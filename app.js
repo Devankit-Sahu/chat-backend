@@ -2,23 +2,17 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import errorMiddleware from "./middlewares/errorMiddleware.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 
-app.use(
-  cors({
-    origin:process.env.CORS_FRONTEND_URL,
-  })
-);
+app.use(cors());
 // app.use(
 //   cors({
-//     origin:
-//       process.env.NODE_ENV === "production"
-//         ? process.env.CORS_FRONTEND_URL
-//         : process.env.CORS_FRONTEND_URL,
+//     origin: process.env.CORS_FRONTEND_URL,
 //   })
 // );
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -26,11 +20,9 @@ app.use(cookieParser());
 // import routes
 import userRoutes from "./routes/userRoute.js";
 import chatRoutes from "./routes/chatRoute.js";
-import groupRoutes from "./routes/groupRoute.js";
 
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/chats", chatRoutes);
-app.use("/api/v1/group", groupRoutes);
 
 app.use(errorMiddleware);
 

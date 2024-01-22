@@ -1,19 +1,9 @@
-import dotenv from "dotenv";
 import connectDatabase from "./db/database.js";
 import { app } from "./app.js";
 import { Server } from "socket.io";
 import User from "./models/userModel.js";
 import oneToOneChat from "./models/oneToOneChatModel.js";
 import cloudinary from "cloudinary";
-
-dotenv.config({ path: ".env.development" });
-
-// configure environmental variables and Load environment variables based on NODE_ENV
-// if (process.env.NODE_ENV == "development") {
-//   dotenv.config({ path: ".env.development" });
-// } else if (process.env.NODE_ENV == "production") {
-//   dotenv.config({ path: ".env.production" });
-// }
 
 // configure cloudinary
 cloudinary.config({
@@ -35,21 +25,12 @@ await connectDatabase()
     const server = app.listen(process.env.PORT || 8080, () => {
       console.log("server is runing in port at 8080");
     });
-
-    // create socket instance
+    const io = new Server(server);
     // const io = new Server(server, {
     //   cors: {
-    //     origin:
-    //       process.env.NODE_ENV === "production"
-    //         ? process.env.CORS_FRONTEND_URL
-    //         : process.env.CORS_FRONTEND_URL,
+    //     origin: process.env.CORS_FRONTEND_URL,
     //   },
     // });
-    const io = new Server(server, {
-      cors: {
-        origin: process.env.CORS_FRONTEND_URL,
-      },
-    });
 
     // create socket connection
     io.on("connection", async (socket) => {
