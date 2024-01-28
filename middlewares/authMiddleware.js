@@ -17,7 +17,6 @@ export const verifiedRoute = async (req, res, next) => {
     } else {
       const user = await User.findById({
         _id: decode._id,
-        "tokens:token": jwtToken,
       });
       req.user = user;
       next();
