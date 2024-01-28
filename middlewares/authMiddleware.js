@@ -3,6 +3,7 @@ import ErrorHandler from "../utils/errorhandler.js";
 import User from "../models/userModel.js";
 
 export const verifiedRoute = async (req, res, next) => {
+  console.log(req.cookies, req.headers);
   const jwtToken = req.cookies.jwtToken;
   await jwt.verify(jwtToken, process.env.JWT_SECRET, async (err, decode) => {
     if (err) {
