@@ -3,10 +3,10 @@ import ErrorHandler from "../utils/errorhandler.js";
 import User from "../models/userModel.js";
 
 export const verifiedRoute = async (req, res, next) => {
-  console.log(req.cookies, req.headers);
-  const jwtToken = req.cookies.jwtToken;
-  await jwt.verify(jwtToken, process.env.JWT_SECRET, async (err, decode) => {
+  const { jwtToken } = req.cookies;
+  jwt.verify(jwtToken, process.env.JWT_SECRET, async (err, decode) => {
     if (err) {
+      console.log(err);
       if (err.name === "TokenExpiredError") {
         return next(
           new ErrorHandler("Token has expired. Please login again", 401)

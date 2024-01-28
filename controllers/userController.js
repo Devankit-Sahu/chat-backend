@@ -74,27 +74,28 @@ export const loginUser = catchAsyncError(async (req, res, next) => {
   }
 
   const token = await user.generateJwtToken();
-  res
-    .cookie("jwtToken", token, {
-      maxAge: 24 * 60 * 60 * 1000,
-      httpOnly: true,
-      secure: true,
-    })
-    .status(200)
-    .json({
-      success: true,
-      message: "user logged in",
-    });
+  res.cookie("jwtToken", token, {
+    httpOnly: true,
+    sameSite: "None",
+    secure: true,
+    maxAge: 24 * 60 * 60 * 1000,
+  });
+  res.status(200).json({
+    success: true,
+    message: "Logged In",
+  });
 });
 
 export const logoutUser = catchAsyncError(async (req, res, next) => {
-  res
-    .clearCookie("jwtToken", { path: "/", httpOnly: true, secure: true })
-    .status(200)
-    .json({
-      success: true,
-      message: "user logged out",
-    });
+  res.clearCookie("jwtToken", {
+    httpOnly: true,
+    sameSite: "None",
+    secure: true,
+  });
+  res.status(200).json({
+    success: true,
+    message: "user logged out",
+  });
 });
 
 export const allusers = catchAsyncError(async (req, res, next) => {

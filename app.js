@@ -1,18 +1,17 @@
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import errorMiddleware from "./middlewares/errorMiddleware.js";
-import dotenv from "dotenv";
+import corsOptions from "./config/corsOptions.js";
+import credentials from "./middlewares/credentials.js";
 dotenv.config();
 
 const app = express();
 
-app.use(
-  cors({
-    origin: "https://chat-app-alpha-seven-93.vercel.app",
-    credentials: true,
-  })
-);
+app.use(credentials);
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
