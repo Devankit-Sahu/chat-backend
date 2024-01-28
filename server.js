@@ -27,7 +27,7 @@ await connectDatabase()
     });
     const io = new Server(server, {
       cors: {
-        origin: "https://chat-frontend-8mcb.onrender.com",
+        origin: "http://localhost:5173",
       },
     });
 

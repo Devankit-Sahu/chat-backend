@@ -3,7 +3,7 @@ import ErrorHandler from "../utils/errorhandler.js";
 import User from "../models/userModel.js";
 
 export const verifiedRoute = async (req, res, next) => {
-  const { jwtToken } = req.cookies;
+  const jwtToken = req.cookies.jwtToken || req.headers.cookie.split("=")[1];
   await jwt.verify(jwtToken, process.env.JWT_SECRET, async (err, decode) => {
     if (err) {
       if (err.name === "TokenExpiredError") {

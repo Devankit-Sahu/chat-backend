@@ -76,7 +76,7 @@ export const loginUser = catchAsyncError(async (req, res, next) => {
   const token = await user.generateJwtToken();
   res
     .cookie("jwtToken", token, {
-      expires: new Date(Date.now() + 1800000),
+      maxAge: 24 * 60 * 60 * 1000,
       httpOnly: true,
       secure: true,
     })
@@ -88,10 +88,13 @@ export const loginUser = catchAsyncError(async (req, res, next) => {
 });
 
 export const logoutUser = catchAsyncError(async (req, res, next) => {
-  res.clearCookie("jwtToken", { path: "/" }).status(200).json({
-    success: true,
-    message: "user logged out",
-  });
+  res
+    .clearCookie("jwtToken", { path: "/", httpOnly: true, secure: true })
+    .status(200)
+    .json({
+      success: true,
+      message: "user logged out",
+    });
 });
 
 export const allusers = catchAsyncError(async (req, res, next) => {
