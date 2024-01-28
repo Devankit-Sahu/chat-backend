@@ -3,7 +3,7 @@ import ErrorHandler from "../utils/errorhandler.js";
 import User from "../models/userModel.js";
 
 export const verifiedRoute = async (req, res, next) => {
-  const jwtToken = req.cookies.jwtToken || req.headers.cookie.split("=")[1];
+  const jwtToken = req.cookies.jwtToken;
   await jwt.verify(jwtToken, process.env.JWT_SECRET, async (err, decode) => {
     if (err) {
       if (err.name === "TokenExpiredError") {
@@ -18,6 +18,9 @@ export const verifiedRoute = async (req, res, next) => {
       const user = await User.findById({
         _id: decode._id,
       });
+      if (!user) {
+        return next(new ErrorHandler("User not found", 404));
+      }
       req.user = user;
       next();
     }
