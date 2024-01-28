@@ -28,6 +28,7 @@ await connectDatabase()
     const io = new Server(server, {
       cors: {
         origin: "https://chat-app-alpha-seven-93.vercel.app",
+        credentials: true,
       },
     });
 
