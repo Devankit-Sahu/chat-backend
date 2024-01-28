@@ -3,6 +3,7 @@ import ErrorHandler from "../utils/errorhandler.js";
 import User from "../models/userModel.js";
 
 export const verifiedRoute = async (req, res, next) => {
+  res.header("Access-Control-Allow-Credentials", true);
   const { jwtToken } = req.cookies;
   jwt.verify(jwtToken, process.env.JWT_SECRET, async (err, decode) => {
     if (err) {
