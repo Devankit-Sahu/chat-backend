@@ -25,7 +25,7 @@ export const newUser = catchAsyncError(async (req, res, next) => {
     const avatarObj = await uploadOnCloudinary(avatarPath);
     const avatar = {
       public_id: avatarObj.public_id,
-      url: avatarObj.url,
+      url: avatarObj.secure_url,
     };
     user = await User.create({
       username,
@@ -176,7 +176,7 @@ export const updateUserAvatar = catchAsyncError(async (req, res, next) => {
       { _id: loggedinuser._id },
       {
         $set: {
-          avatar: { public_id: avatarObj.public_id, url: avatarObj.url },
+          avatar: { public_id: avatarObj.public_id, url: avatarObj.secure_url },
         },
       },
       { new: true }
@@ -191,7 +191,7 @@ export const updateUserAvatar = catchAsyncError(async (req, res, next) => {
       { _id: loggedinuser._id },
       {
         $set: {
-          avatar: { public_id: avatarObj.public_id, url: avatarObj.url },
+          avatar: { public_id: avatarObj.public_id, url: avatarObj.secure_url },
         },
       },
       { new: true }
