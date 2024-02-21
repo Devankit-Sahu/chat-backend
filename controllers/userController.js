@@ -39,9 +39,9 @@ export const newUser = catchAsyncError(async (req, res, next) => {
 
   res
     .cookie("jwtToken", token, {
-      expires: new Date(Date.now() + 1800000),
+      maxAge: new Date(Date.now() + 1800000),
       httpOnly: true,
-      secure: true,
+      // secure: true,
     })
     .status(200)
     .json({
@@ -76,8 +76,8 @@ export const loginUser = catchAsyncError(async (req, res, next) => {
   const token = await user.generateJwtToken();
   res.cookie("jwtToken", token, {
     httpOnly: true,
-    sameSite: "None",
-    secure: true,
+    // sameSite: "None",
+    // secure: true,
     maxAge: 24 * 60 * 60 * 1000,
   });
   res.status(200).json({
@@ -145,15 +145,15 @@ export const searchUserByName = catchAsyncError(async (req, res, next) => {
   });
 });
 
-export const updateUserAbout = catchAsyncError(async (req, res, next) => {
+export const updateUserDetails = catchAsyncError(async (req, res, next) => {
   await User.findByIdAndUpdate(
     { _id: req.user._id },
-    { $set: { about: req.body.about } },
+    { $set: { about: req.body.about, username: req.body.username } },
     { new: true }
   );
   res.status(200).json({
     success: true,
-    message: "About updated successfully",
+    message: "Details updated successfully",
   });
 });
 

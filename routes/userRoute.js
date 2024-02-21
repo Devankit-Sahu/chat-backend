@@ -8,7 +8,7 @@ import {
   newUser,
   searchUserByName,
   selectedUserDetails,
-  updateUserAbout,
+  updateUserDetails,
   updateUserAvatar,
   userDetails,
 } from "../controllers/userController.js";
@@ -22,7 +22,7 @@ router.get("/all",verifiedRoute, allusers);
 router.get("/me", verifiedRoute, userDetails);
 router.get("/:id", verifiedRoute, selectedUserDetails);
 router.get("/username/:username", verifiedRoute, searchUserByName);
-router.patch("/update/about", verifiedRoute, updateUserAbout);
+router.patch("/update/details", verifiedRoute, updateUserDetails);
 router.patch(
   "/update/avatar",
   verifiedRoute,
