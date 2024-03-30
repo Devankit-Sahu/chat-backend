@@ -1,10 +1,15 @@
+import multer from "multer";
+
 const errorMiddleware = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.message = err.message || "Internal server error";
 
   // duplicate username error
   if (err.code === 11000) {
-    err.message = `The username ${err.keyValue.username} already in use !!`;
+    console.log(err);
+    err.message = `The ${Object.keys(err.keyValue)[0]} ${
+      err.keyValue[Object.keys(err.keyValue)[0]]
+    } already in use`;
     err.statusCode = 400;
   }
 
@@ -20,6 +25,13 @@ const errorMiddleware = (err, req, res, next) => {
     err.message = msg;
     err.statusCode = 400;
   }
+
+  //multer error
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_UNEXPECTED_FILE")
+      err.message = "files limit exceed";
+  }
+
   res.status(err.statusCode).json({
     success: false,
     message: err.message,

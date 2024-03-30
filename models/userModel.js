@@ -5,13 +5,13 @@ import jwt from "jsonwebtoken";
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
-    required: [true, "Username is required"],
+    required: true,
     unique: true,
     minLength: [6, "Length should be minimum 6"],
   },
   email: {
     type: String,
-    required: [true, "Email already exist"],
+    required: true,
     unique: true,
     validate: {
       validator: function (v) {
@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, "password is required"],
+    required: true,
     select: false,
     minLength: [8, "password should be of 8 characters"],
     validate: {
@@ -73,4 +73,4 @@ userSchema.methods.generateJwtToken = async function () {
   }
 };
 
-export default mongoose.model("User", userSchema);
+export const User = mongoose.model("User", userSchema);

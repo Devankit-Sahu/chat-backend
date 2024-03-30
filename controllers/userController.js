@@ -1,153 +1,23 @@
 import catchAsyncError from "../utils/catchAsyncErrors.js";
 import ErrorHandler from "../utils/errorhandler.js";
-import User from "../models/userModel.js";
-import { uploadOnCloudinary } from "../utils/cloudinaryFIleUpload.js";
-import cloudinary from "cloudinary";
+import { User } from "../models/userModel.js";
+import { Chat } from "../models/chatModel.js";
+import { FriendRequest } from "../models/friendRequestModel.js";
+import { emitEvent } from "../utils/features.js";
+import { NEW_REQUEST, REFETCH_CHATS } from "../constants/constants.js";
 
-export const newUser = catchAsyncError(async (req, res, next) => {
-  const { username, email, password } = req.body;
-
-  let user = await User.findOne({ email });
-
-  if (user) {
-    return next(new ErrorHandler("Email already in use", 404));
-  }
-
-  const avatarPath = req.file?.path;
-
-  if (!avatarPath) {
-    user = await User.create({
-      username,
-      email,
-      password,
-    });
-  } else {
-    const avatarObj = await uploadOnCloudinary(avatarPath);
-    const avatar = {
-      public_id: avatarObj.public_id,
-      url: avatarObj.secure_url,
-    };
-    user = await User.create({
-      username,
-      email,
-      password,
-      avatar,
-    });
-  }
-
-  const token = await user.generateJwtToken();
-
-  res
-    .cookie("jwtToken", token, {
-      maxAge: new Date(Date.now() + 1800000),
-      httpOnly: true,
-      // secure: true,
-    })
-    .status(200)
-    .json({
-      success: true,
-      message: "User created",
-    });
-});
-
-export const loginUser = catchAsyncError(async (req, res, next) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return next(new ErrorHandler("Please provide email and password", 404));
-  }
-
-  const user = await User.findOne({ email }).select("+password");
-
-  if (!user) {
-    return next(
-      new ErrorHandler(
-        "User with this email does not exist. Please create new account to use our service",
-        404
-      )
-    );
-  }
-
-  const matchedPassword = await user.comparePassword(password);
-  if (!matchedPassword) {
-    return next(new ErrorHandler("Invalid credential. Enter again !!!"), 404);
-  }
-
-  const token = await user.generateJwtToken();
-  res.cookie("jwtToken", token, {
-    httpOnly: true,
-    // sameSite: "None",
-    // secure: true,
-    maxAge: 24 * 60 * 60 * 1000,
-  });
-  res.status(200).json({
-    success: true,
-    message: "Logged In",
-  });
-});
-
-export const logoutUser = catchAsyncError(async (req, res, next) => {
-  res.clearCookie("jwtToken", {
-    httpOnly: true,
-    sameSite: "None",
-    secure: true,
-  });
-  res.status(200).json({
-    success: true,
-    message: "user logged out",
-  });
-});
-
-export const allusers = catchAsyncError(async (req, res, next) => {
-  const users = await User.find({
-    _id: {
-      $nin: [req.user.id],
-    },
-  });
-  res.status(200).json({
-    success: true,
-    users,
-  });
-});
-
-export const userDetails = catchAsyncError(async (req, res, next) => {
-  const user = await User.findById(req.user._id);
+// my details
+const myDetails = catchAsyncError(async (req, res, next) => {
+  const user = await User.findById(req.user);
   res.status(200).json({
     success: true,
     user,
   });
 });
-
-export const selectedUserDetails = catchAsyncError(async (req, res, next) => {
-  const user = await User.findById(req.params.id);
-  res.status(200).json({
-    success: true,
-    user,
-  });
-});
-
-export const searchUserByName = catchAsyncError(async (req, res, next) => {
-  const usernameRegex = new RegExp(req.params.username, "i");
-  const users = await User.find({ username: { $regex: usernameRegex } });
-
-  if (!users) {
-    return next(
-      new ErrorHandler(
-        `user with ${req.params.username} username does not exists`,
-        401
-      )
-    );
-  }
-
-  res.status(200).json({
-    success: true,
-    users,
-  });
-});
-
-export const updateUserDetails = catchAsyncError(async (req, res, next) => {
+// update my details
+const updateMyDetails = catchAsyncError(async (req, res, next) => {
   await User.findByIdAndUpdate(
-    { _id: req.user._id },
+    { _id: req.user },
     { $set: { about: req.body.about, username: req.body.username } },
     { new: true }
   );
@@ -156,77 +26,173 @@ export const updateUserDetails = catchAsyncError(async (req, res, next) => {
     message: "Details updated successfully",
   });
 });
+// get my friends
+const allMyFriends = catchAsyncError(async (req, res, next) => {
+  const { chatId } = req.query;
 
-export const updateUserAvatar = catchAsyncError(async (req, res, next) => {
-  let loggedinuser = await User.findById({ _id: req.user._id });
-  const avatarPath = req.file?.path;
+  const myChats = await Chat.find({ members: req.user, groupChat: false });
 
-  if (!avatarPath) {
-    return next(new ErrorHandler("Avatar is missing", 400));
+  if (!myChats) return next(new ErrorHandler("freinds not found", 400));
+
+  let groupMembers = [];
+
+  if (chatId) {
+    const chat = await Chat.findById(chatId).select("members");
+    groupMembers = chat ? chat.members.map((member) => member.toString()) : [];
   }
 
-  if (
-    loggedinuser.avatar &&
-    !loggedinuser.avatar.public_id &&
-    !loggedinuser.avatar.url
-  ) {
-    //uploading new avatar to cloudinary
-    const avatarObj = await uploadOnCloudinary(avatarPath);
-    await User.findByIdAndUpdate(
-      { _id: loggedinuser._id },
-      {
-        $set: {
-          avatar: { public_id: avatarObj.public_id, url: avatarObj.secure_url },
-        },
-      },
-      { new: true }
-    );
-  } else {
-    // deleting image from cloudinary
-    await cloudinary.v2.uploader.destroy(loggedinuser.avatar.public_id);
-    // updating avatar of user
-    const avatarObj = await uploadOnCloudinary(avatarPath);
+  let myFriends = [];
 
-    await User.findByIdAndUpdate(
-      { _id: loggedinuser._id },
-      {
-        $set: {
-          avatar: { public_id: avatarObj.public_id, url: avatarObj.secure_url },
-        },
-      },
-      { new: true }
+  myChats.forEach((c) => {
+    const friends = c.members.filter(
+      (member) => member.toString() !== req.user.toString()
     );
-  }
-  res.status(200).json({
-    success: true,
-    message: "Avatar update successfully",
+    myFriends.push(...friends);
   });
-});
 
-export const changePassword = catchAsyncError(async (req, res, next) => {
-  const { oldPassword, newPassword } = req.body;
-
-  if (!oldPassword) {
-    return next(new ErrorHandler("old password is missing", 400));
-  }
-  if (!newPassword) {
-    return next(new ErrorHandler("new password is missing", 400));
-  }
-
-  const loggedinuser = await User.findById(req.user._id).populate("password");
-
-  const isPasswordCorrect = await loggedinuser.comparePassword(oldPassword);
-
-  if (!isPasswordCorrect) {
-    return next(new ErrorHandler("old password is incorrect", 400));
-  }
-
-  loggedinuser.password = newPassword;
-
-  await loggedinuser.save({ validateBeforeSave: false });
+  myFriends = await Promise.all(
+    myFriends.map(async (friend) => {
+      const friendDetails = await User.findById(friend).select(
+        "username avatar"
+      );
+      const isFriendInGroup = groupMembers.includes(friend.toString());
+      return { ...friendDetails.toObject(), isFriend: isFriendInGroup };
+    })
+  );
 
   res.status(200).json({
     success: true,
-    message: "password changed successfully",
+    myFriends,
   });
 });
+// send friend request
+const sendFriendRequest = catchAsyncError(async (req, res, next) => {
+  const { reciever_id } = req.body;
+
+  if (!reciever_id) return next(new ErrorHandler("provide reciever id", 400));
+
+  const isRequestExist = await FriendRequest.findOne({
+    $or: [
+      { sender_id: req.user, reciever_id },
+      { sender_id: reciever_id, reciever_id: req.user },
+    ],
+  });
+
+  if (isRequestExist)
+    return next(new ErrorHandler("friend request sent already", 400));
+
+  await FriendRequest.create({
+    sender_id: req.user,
+    reciever_id,
+  });
+
+  emitEvent(req, NEW_REQUEST, [reciever_id], { message: "hii" });
+
+  res.status(201).json({ success: true, message: "Friend request sent" });
+});
+// accept friend request
+const acceptFriendRequest = catchAsyncError(async (req, res, next) => {
+  const { requestId, accept } = req.body;
+
+  if (!requestId) return next(new ErrorHandler("provide request id", 400));
+
+  const isFriendReqExist = await FriendRequest.findById(requestId)
+    .populate("sender_id", "username")
+    .populate("reciever_id", "username");
+
+  if (!isFriendReqExist)
+    return next(new ErrorHandler("no friend request found", 400));
+
+  if (isFriendReqExist.reciever_id._id.toString() !== req.user.toString())
+    return next(
+      new ErrorHandler("You are not authorized to accept this request", 401)
+    );
+
+  if (!accept) {
+    await isFriendReqExist.deleteOne();
+    return res
+      .status(200)
+      .json({ success: true, message: "Friend request rejected" });
+  }
+
+  const members = [
+    isFriendReqExist.sender_id._id,
+    isFriendReqExist.reciever_id._id,
+  ];
+
+  //creating chat between them
+  await Chat.create({
+    members,
+  });
+
+  await isFriendReqExist.deleteOne();
+
+  emitEvent(req, REFETCH_CHATS, members);
+
+  res.status(200).json({ success: true, message: "Friend request accept" });
+});
+// search user
+const searchUser = catchAsyncError(async (req, res, next) => {
+  const { username = "" } = req.query;
+
+  const myChats = await Chat.find({ groupChat: false, members: req.user });
+
+  const allUsersFromMyChats = myChats.flatMap((chat) => chat.members);
+
+  let allUsersExceptMeAndFriends = await User.find({
+    _id: { $nin: [...allUsersFromMyChats, req.user] },
+    username: { $regex: username, $options: "i" },
+  });
+
+  allUsersExceptMeAndFriends = await Promise.all(
+    allUsersExceptMeAndFriends.map(async (u) => {
+      const friendRequest = await FriendRequest.findOne({
+        $or: [
+          {
+            reciever_id: u._id,
+            sender_id: req.user,
+          },
+          { sender_id: u._id, reciever_id: req.user },
+        ],
+      });
+      u.isFreindRequestExist = friendRequest ? true : false;
+      return u;
+    })
+  );
+
+  const users = allUsersExceptMeAndFriends.map(
+    ({ _id, username, avatar, isFreindRequestExist }) => ({
+      _id,
+      username,
+      avatar: avatar.url,
+      isFreindRequestExist,
+    })
+  );
+
+  return res.status(200).json({
+    success: true,
+    users,
+  });
+});
+// get request notification
+const requestNotificaton = catchAsyncError(async (req, res, next) => {
+  const requests = await FriendRequest.find({ reciever_id: req.user }).populate(
+    "sender_id",
+    "username avatar"
+  );
+
+  res.status(200).json({
+    success: true,
+    requests,
+  });
+});
+
+export {
+  myDetails,
+  updateMyDetails,
+  allMyFriends,
+  sendFriendRequest,
+  acceptFriendRequest,
+  searchUser,
+  requestNotificaton,
+};
