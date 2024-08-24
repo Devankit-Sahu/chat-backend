@@ -109,7 +109,10 @@ const removeMembers = catchAsyncError(async (req, res, next) => {
 
   if (group.creator.toString() !== req.user.toString())
     return next(
-      new ErrorHandler("you are not admin so you cannot remove members", 400)
+      new ErrorHandler(
+        "you are not admin so you cannot remove members. Only admin can do.",
+        400
+      )
     );
 
   group.members = group.members.filter(
@@ -163,25 +166,28 @@ const getChats = catchAsyncError(async (req, res, next) => {
     "username avatar"
   );
 
-  const transformedChats = chats.map(({ _id, name, members, groupChat }) => {
-    const otherMembers = members.find(
-      (m) => m._id.toString() !== req.user.toString()
-    );
-    return {
-      _id,
-      groupChat,
-      avatar: groupChat
-        ? members.slice(0, 2).map(({ avatar }) => avatar.url)
-        : otherMembers.avatar.url,
-      name: groupChat ? name : otherMembers.username,
-      members: members.reduce((prev, curr) => {
-        if (curr._id.toString() !== req.user.toString()) {
-          prev.push(curr._id);
-        }
-        return prev;
-      }, []),
-    };
-  });
+  const transformedChats = chats.map(
+    ({ _id, name, members, groupChat, latestMessage }) => {
+      const otherMembers = members.find(
+        (m) => m._id.toString() !== req.user.toString()
+      );
+      return {
+        _id,
+        groupChat,
+        avatar: groupChat
+          ? members.slice(0, 2).map(({ avatar }) => avatar.url)
+          : otherMembers.avatar.url,
+        name: groupChat ? name : otherMembers.username,
+        members: members.reduce((prev, curr) => {
+          if (curr._id.toString() !== req.user.toString()) {
+            prev.push(curr._id);
+          }
+          return prev;
+        }, []),
+        latestMessage,
+      };
+    }
+  );
 
   res.status(200).json({
     success: true,
@@ -242,7 +248,7 @@ const newMessage = catchAsyncError(async (req, res, next) => {
 
   res.status(201).json({
     success: true,
-    message: "message send successfully",
+    message: "attachment send successfully",
   });
 });
 // get all messages
@@ -289,11 +295,11 @@ const deleteAllMessages = catchAsyncError(async (req, res, next) => {
 });
 // search chat
 const searchChat = catchAsyncError(async (req, res, next) => {
-  const { name } = req.body;
+  const { name } = req.query;
 
   const nameRegex = new RegExp(name, "i");
 
-  const searchedChat = await User.findOne({
+  const searchedChat = await Chat.findOne({
     name: nameRegex,
   });
 

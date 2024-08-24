@@ -50,6 +50,7 @@ import {
   ONLINEUSERS,
 } from "./constants/constants.js";
 import { User } from "./models/userModel.js";
+import { Chat } from "./models/chatModel.js";
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/user", userRoutes);
@@ -80,6 +81,7 @@ const userSocketIds = new Map();
 const onlineUsers = new Set();
 // create socket connection
 io.on(CONNECTION, async (socket) => {
+  console.log("connection established");
   const user = socket.user;
   userSocketIds.set(user._id.toString(), socket.id);
   onlineUsers.add(user._id.toString());
@@ -92,7 +94,14 @@ io.on(CONNECTION, async (socket) => {
     async ({ senderId, chatId, content, members, createdAt }) => {
       // storing message in db
       try {
-        await Message.create({ senderId, chatId, content });
+        await Chat.findByIdAndUpdate(chatId, {
+          $set: { latestMessage: content },
+        });
+        await Message.create({
+          senderId,
+          chatId,
+          content,
+        });
       } catch (error) {
         throw error;
       }

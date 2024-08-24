@@ -28,37 +28,21 @@ const updateMyDetails = catchAsyncError(async (req, res, next) => {
 });
 // get my friends
 const allMyFriends = catchAsyncError(async (req, res, next) => {
-  const { chatId } = req.query;
-
-  const myChats = await Chat.find({ members: req.user, groupChat: false });
+  const myChats = await Chat.find({
+    members: req.user,
+    groupChat: false,
+  }).populate("members", "username avatar");
 
   if (!myChats) return next(new ErrorHandler("freinds not found", 400));
-
-  let groupMembers = [];
-
-  if (chatId) {
-    const chat = await Chat.findById(chatId).select("members");
-    groupMembers = chat ? chat.members.map((member) => member.toString()) : [];
-  }
 
   let myFriends = [];
 
   myChats.forEach((c) => {
     const friends = c.members.filter(
-      (member) => member.toString() !== req.user.toString()
+      (member) => member._id.toString() !== req.user.toString()
     );
     myFriends.push(...friends);
   });
-
-  myFriends = await Promise.all(
-    myFriends.map(async (friend) => {
-      const friendDetails = await User.findById(friend).select(
-        "username avatar"
-      );
-      const isFriendInGroup = groupMembers.includes(friend.toString());
-      return { ...friendDetails.toObject(), isFriend: isFriendInGroup };
-    })
-  );
 
   res.status(200).json({
     success: true,

@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     select: false,
-    minLength: [8, "password should be of 8 characters"],
+    minLength: 8,
     validate: {
       validator: function (pass) {
         // Regular expression for password validation

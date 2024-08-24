@@ -16,6 +16,10 @@ const chatSchema = new mongoose.Schema(
       url: String,
     },
     groupChat: { type: Boolean, default: false },
+    latestMessage: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );
