@@ -12,8 +12,6 @@ const register = catchAsyncError(async (req, res, next) => {
 
   if (!password) return next(new ErrorHandler("password is required", 400));
 
-  if (!about) return next(new ErrorHandler("about is required", 400));
-
   let user = await User.findOne({ email });
 
   if (user) {

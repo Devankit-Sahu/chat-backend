@@ -6,7 +6,7 @@ import {
   deleteFilesFromCloudinary,
   uploadOnCloudinary,
 } from "../utils/cloudinaryFIleUpload.js";
-import { emitEvent } from "../utils/features.js";
+import { emitEvent } from "../lib/helper.js";
 import { NEW_MESSAGE_RECIEVED, REFETCH_CHATS } from "../constants/constants.js";
 import { User } from "../models/userModel.js";
 
@@ -35,7 +35,7 @@ const newGroup = catchAsyncError(async (req, res, next) => {
       name,
       members: [...members, req.user],
       creator: req.user,
-      profilePicture: { public_id: result.public_id, url: result.secure_url },
+      profile: { public_id: result.public_id, url: result.secure_url },
       groupChat: true,
     });
   }
@@ -166,28 +166,21 @@ const getChats = catchAsyncError(async (req, res, next) => {
     "username avatar"
   );
 
-  const transformedChats = chats.map(
-    ({ _id, name, members, groupChat, latestMessage }) => {
-      const otherMembers = members.find(
-        (m) => m._id.toString() !== req.user.toString()
-      );
-      return {
-        _id,
-        groupChat,
-        avatar: groupChat
-          ? members.slice(0, 2).map(({ avatar }) => avatar.url)
-          : otherMembers.avatar.url,
-        name: groupChat ? name : otherMembers.username,
-        members: members.reduce((prev, curr) => {
-          if (curr._id.toString() !== req.user.toString()) {
-            prev.push(curr._id);
-          }
-          return prev;
-        }, []),
-        latestMessage,
-      };
-    }
-  );
+  const transformedChats = chats.map((chat) => {
+    return {
+      ...chat.toObject(),
+      name: chat.groupChat
+        ? chat.name
+        : chat.members.find(
+            (member) => member._id.toString() !== req.user.toString()
+          ).username,
+      profile: chat.groupChat
+        ? chat.profile
+        : chat.members.find(
+            (member) => member._id.toString() !== req.user.toString()
+          ).avatar,
+    };
+  });
 
   res.status(200).json({
     success: true,
@@ -299,17 +292,34 @@ const searchChat = catchAsyncError(async (req, res, next) => {
 
   const nameRegex = new RegExp(name, "i");
 
-  const searchedChat = await Chat.findOne({
+  const searchedChats = await Chat.find({
     name: nameRegex,
-  });
+    members: req.user,
+  }).populate("members", "username avatar");
 
-  if (!searchedChat) {
-    return next(new ErrorHandler(`chat not found`, 400));
+  if (!searchedChats.length) {
+    return next(new ErrorHandler(`${name} chat not found`, 400));
   }
+
+  const transformedChats = searchedChats.map((chat) => {
+    return {
+      ...chat.toObject(),
+      name: chat.groupChat
+        ? chat.name
+        : chat.members.find(
+            (member) => member._id.toString() !== req.user.toString()
+          ).username,
+      profile: chat.groupChat
+        ? chat.profile
+        : chat.members.find(
+            (member) => member._id.toString() !== req.user.toString()
+          ).avatar,
+    };
+  });
 
   res.status(200).json({
     success: true,
-    searchedChat,
+    searchedChats: transformedChats,
   });
 });
 // get chat details
@@ -334,6 +344,11 @@ const getChatDetails = catchAsyncError(async (req, res, next) => {
         : chat.members.find(
             (member) => member._id.toString() !== req.user.toString()
           ).username,
+      profile: chat.groupChat
+        ? chat.profile
+        : chat.members.find(
+            (member) => member._id.toString() !== req.user.toString()
+          ).avatar,
     },
   });
 });

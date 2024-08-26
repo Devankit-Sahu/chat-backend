@@ -21,10 +21,19 @@ const userSchema = new mongoose.Schema({
       message: (props) => `${props.value} is not a valid email address!`,
     },
   },
-  about: String,
+  about: {
+    type: String,
+    default: "Hey there! I am using chat app.",
+  },
   avatar: {
-    public_id: String,
-    url: String,
+    public_id: {
+      type: String,
+      default: null,
+    },
+    url: {
+      type: String,
+      default: null,
+    },
   },
   password: {
     type: String,

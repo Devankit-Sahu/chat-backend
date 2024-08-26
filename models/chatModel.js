@@ -12,8 +12,14 @@ const chatSchema = new mongoose.Schema(
     name: String,
     creator: { type: Types.ObjectId, ref: "User" },
     profile: {
-      public_id: String,
-      url: String,
+      public_id: {
+        type: String,
+        default: null,
+      },
+      url: {
+        type: String,
+        default: null,
+      },
     },
     groupChat: { type: Boolean, default: false },
     latestMessage: {

@@ -3,7 +3,7 @@ import ErrorHandler from "../utils/errorhandler.js";
 import { User } from "../models/userModel.js";
 import { Chat } from "../models/chatModel.js";
 import { FriendRequest } from "../models/friendRequestModel.js";
-import { emitEvent } from "../utils/features.js";
+import { emitEvent } from "../lib/helper.js";
 import { NEW_REQUEST, REFETCH_CHATS } from "../constants/constants.js";
 
 // my details
@@ -70,7 +70,7 @@ const sendFriendRequest = catchAsyncError(async (req, res, next) => {
     reciever_id,
   });
 
-  emitEvent(req, NEW_REQUEST, [reciever_id], { message: "hii" });
+  emitEvent(req, NEW_REQUEST, [reciever_id], { count: 1 });
 
   res.status(201).json({ success: true, message: "Friend request sent" });
 });
@@ -107,6 +107,7 @@ const acceptFriendRequest = catchAsyncError(async (req, res, next) => {
   //creating chat between them
   await Chat.create({
     members,
+    name: `${isFriendReqExist.sender_id.username}-${isFriendReqExist.reciever_id.username}`,
   });
 
   await isFriendReqExist.deleteOne();
