@@ -69,11 +69,6 @@ const addMembers = catchAsyncError(async (req, res, next) => {
   if (!group.groupChat)
     return next(new ErrorHandler("this is not a group chat", 400));
 
-  if (group.creator.toString() !== req.user.toString())
-    return next(
-      new ErrorHandler("you are not a admin, cannot add members", 400)
-    );
-
   group.members.push(...members);
 
   if (group.members.length > 50)
@@ -155,7 +150,7 @@ const leaveGroup = catchAsyncError(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    message: "member left the group",
+    message: "you left the group",
     group,
   });
 });

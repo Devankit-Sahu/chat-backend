@@ -70,7 +70,10 @@ const sendFriendRequest = catchAsyncError(async (req, res, next) => {
     reciever_id,
   });
 
-  emitEvent(req, NEW_REQUEST, [reciever_id], { count: 1 });
+  emitEvent(req, NEW_REQUEST, [reciever_id], {
+    count: 1,
+    message: `someone sent you a friend request`,
+  });
 
   res.status(201).json({ success: true, message: "Friend request sent" });
 });
